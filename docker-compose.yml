@@ -1,0 +1,11 @@
+services:
+  api:
+    image: ${DOCKER_REGISTRY-}api
+    build:
+      context: .
+      dockerfile: Api/Dockerfile
+    ports:
+      - "42069:8080"
+      - "42070:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
