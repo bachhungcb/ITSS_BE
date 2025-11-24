@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using DataAccess.EFCore.Persistence;
 using DataAccess.EFCore.Persistence.Repositories;
+using Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tools.Services;
@@ -19,5 +20,6 @@ public static class DependencyInjection
         // Các dịch vụ khác bạn đã có (ví dụ)
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddHttpClient<IGymSearchService, OsmGymPlaceSearchService>();
     }
 }
