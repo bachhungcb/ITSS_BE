@@ -11,7 +11,15 @@ public class FilterPlaceController : BaseApiController
     [HttpPost]
     public async Task<IActionResult> Create(AddFilterPlaceCommand command)
     {
-        return Ok(await Mediator.Send(command));
+        try
+        {
+            var entityId = await Mediator.Send(command);
+        return Ok(new { FilerPlaceId = entityId });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet]
