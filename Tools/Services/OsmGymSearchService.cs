@@ -29,7 +29,8 @@ public class OsmGymPlaceSearchService : IGymSearchService
 
         var searchLat = geoResponse[0]["lat"].ToString();
         var searchLon = geoResponse[0]["lon"].ToString();
-
+        double originLat = double.Parse(searchLat);
+        double originLon = double.Parse(searchLon);
         // BƯỚC 2: Tìm Gym bán kính 1000m quanh tọa độ đó (Dùng Overpass API)
         // QUERY ĐÃ TỐI ƯU (Dùng out center)
         string overpassQuery = $"""
@@ -79,7 +80,12 @@ public class OsmGymPlaceSearchService : IGymSearchService
 
                 // Nếu không lấy được tọa độ thì bỏ qua
                 if (!latitude.HasValue || !longitude.HasValue) continue;
-
+                
+                double distance = 0;
+                if (latitude.HasValue && longitude.HasValue)
+                {
+                    distance = CalculateDistance(originLat, originLon, latitude.Value, longitude.Value);
+                }
                 // Lấy tên, nếu không có tên thì lấy tạm loại hình
                 string name = element.Tags.ContainsKey("name")
                     ? element.Tags["name"]
@@ -95,7 +101,8 @@ public class OsmGymPlaceSearchService : IGymSearchService
                     Address = addressDetail,
                     Latitude = latitude.Value,
                     Longitude = longitude.Value,
-                    OsmId = $"{element.Type}/{element.Id}" // Lưu lại để debug: node/12345
+                    OsmId = $"{element.Type}/{element.Id}", // Lưu lại để debug: node/12345
+                    DistanceInMeters = distance,
                 });
             }
 
@@ -118,5 +125,22 @@ public class OsmGymPlaceSearchService : IGymSearchService
         if (tags.TryGetValue("addr:city", out var city)) parts.Add(city);
 
         return parts.Count > 0 ? string.Join(", ", parts) : "No address info";
+    }
+    
+    // 1. Thêm hàm tiện ích tính khoảng cách
+    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        var R = 6371e3; // Bán kính trái đất (mét)
+        var phi1 = lat1 * Math.PI / 180;
+        var phi2 = lat2 * Math.PI / 180;
+        var deltaPhi = (lat2 - lat1) * Math.PI / 180;
+        var deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+        var a = Math.Sin(deltaPhi / 2) * Math.Sin(deltaPhi / 2) +
+                Math.Cos(phi1) * Math.Cos(phi2) *
+                Math.Sin(deltaLambda / 2) * Math.Sin(deltaLambda / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+        return R * c; // Trả về mét
     }
 }

@@ -1,8 +1,8 @@
 # Stage 1: Base - Dùng cho môi trường runtime cuối cùng
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 42069
-EXPOSE 42070
+EXPOSE 3636
+EXPOSE 3737
 
 # Stage 2: Build - Biên dịch và build toàn bộ solution
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -11,7 +11,7 @@ WORKDIR /src
 
 # Sao chép file solution (.sln) và tất cả các file project (.csproj) trước tiên
 # SỬA LẠI TÊN FILE .SLN CHO ĐÚNG VỚI DỰ ÁN CỦA BẠN
-COPY ["OnlineWebAndService.sln", "."]
+COPY ["ITSSBE.sln", "."]
 COPY ["Api/Api.csproj", "Api/"]
 COPY ["DataAccess.EFCore/DataAccess.EFCore.csproj", "DataAccess.EFCore/"]
 COPY ["Application/Application.csproj", "Application/"]
@@ -21,14 +21,14 @@ COPY ["Tools/Tools.csproj", "Tools/"]
 
 # Chạy restore trên file solution. Đây là cách làm đúng.
 # Nó sẽ đọc "bản đồ" và restore cho tất cả các project.
-RUN dotnet restore "OnlineWebAndService.sln"
+RUN dotnet restore "ITSSBE.sln"
 
 # Sao chép toàn bộ source code còn lại
 COPY . .
 
 # Build toàn bộ solution
 # WORKDIR không cần thiết ở đây, vì build từ solution sẽ tự tìm các project
-RUN dotnet build "OnlineWebAndService.sln" -c $BUILD_CONFIGURATION --no-restore
+RUN dotnet build "ITSSBE.sln" -c $BUILD_CONFIGURATION --no-restore
 
 # Stage 3: Publish - Chỉ publish project Api
 FROM build AS publish

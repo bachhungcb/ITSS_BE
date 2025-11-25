@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<FriendRequest> FriendRequests { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Conversation> Conversation { get; set; }
+    public DbSet<FilterPlace> FilterPlaces { get; set; }
 
     public async Task<int> SaveChanges()
     {

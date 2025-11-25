@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces;
 using DataAccess.EFCore.Context;
 using DataAccess.EFCore.Persistence.Repositories;
+using Domain.Interfaces;
+using IUserRepository = Application.Interfaces.IUserRepository;
 
 namespace DataAccess.EFCore.Persistence;
 
@@ -14,6 +16,7 @@ public class UnitOfWork : IUnitOfWork
     #region Repositories
 
     public IUserRepository UserRepository { get; }
+    public IFilterPlaceRepository FilterPlaceRepository { get; }
 
     #endregion
 
@@ -25,8 +28,7 @@ public class UnitOfWork : IUnitOfWork
         // Khởi tạo tất cả các repository của bạn ở đây
         // Bằng cách này, tất cả repository đều dùng CHUNG một DbContext
         UserRepository = new UserRepository(_context);
-        // Nếu có repository khác (ví dụ: IPostRepository), 
-        // bạn cũng sẽ khởi tạo nó ở đây.
+        FilterPlaceRepository = new FilterPlaceRepository(_context);
     }
 
     // 4. Triển khai SaveChangesAsync

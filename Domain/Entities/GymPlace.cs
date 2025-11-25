@@ -11,4 +11,8 @@ public class GymPlace : BaseEntity
     
     // OPTIONAL: Save Open Street Map raw data for auditing
     public string? OsmId { get; set; }
+    
+    //trường này để hiển thị khoảng cách
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped] 
+    public double? DistanceInMeters { get; set; }
 }
