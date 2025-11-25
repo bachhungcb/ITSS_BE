@@ -1,6 +1,4 @@
 ﻿using Application.Interfaces;
-using DataAccess.EFCore.Persistence;
-using DataAccess.EFCore.Persistence.Repositories;
 using Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

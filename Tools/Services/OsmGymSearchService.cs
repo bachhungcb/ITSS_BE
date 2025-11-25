@@ -109,16 +109,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
         }
     }
 
-    // DTO nội bộ để hứng JSON từ OSM
-    private class OsmResultDto
-    {
-        public long osm_id { get; set; }
-        public string lat { get; set; }
-        public string lon { get; set; }
-        public string display_name { get; set; }
-        public string type { get; set; }
-    }
-
+    
     private string GetAddressFromTags(Dictionary<string, string> tags)
     {
         var parts = new List<string>();
