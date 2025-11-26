@@ -19,10 +19,5 @@ public class FilterPlaceRepository : GenericRepository<FilterPlace>, IFilterPlac
             .Where(x => x.UserId == userId)
             .ToListAsync();
     }
-
-    public async Task<> AddFilterPlaceAsync(FilterPlace filterPlace)
-    {
-        await _dbContext.Set<FilterPlace>().AddAsync(filterPlace);
-        await _dbContext.SaveChangesAsync();
-    }
+    
 }

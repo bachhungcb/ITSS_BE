@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Application.Interfaces;
+using MediatR;
 
 namespace Application.Features.GymFeatures.Commands;
 
@@ -16,7 +17,7 @@ public record AddUserFilterCommand(
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Unit> Handle(AddUserFilterCommand request, CancellationToken cancellationToken)
+        public async Task Handle(AddUserFilterCommand request, CancellationToken cancellationToken)
         {
             var filterPlace = new Domain.Entities.FilterPlace
             {
@@ -25,10 +26,10 @@ public record AddUserFilterCommand(
                 Address = request.Address
             };
 
-            await _unitOfWork.FilterPlaceRepository.AddFilterPlaceAsync(filterPlace);
+             _unitOfWork.FilterPlaceRepository.Add(filterPlace);   
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Unit.Value;
+            
+            
         }
     }
 }

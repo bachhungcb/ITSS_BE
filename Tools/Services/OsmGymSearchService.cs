@@ -109,7 +109,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
                 // Nếu không có tag sport thì check tag leisure
                 if (sportTags.Count == 0 && element.Tags.TryGetValue("leisure", out var leisure))
                 {
-                    if (leisure == "fitness_centre") sportTags.Add("Thể hình");
+                    if (leisure == "fitness_centre") sportTags.Add("フィットネス");
                 }
 
                 // 3. Xử lý Ảnh (OSM không lưu ảnh, ta phải tự random hoặc check tag 'image')

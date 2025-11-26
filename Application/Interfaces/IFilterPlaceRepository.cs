@@ -8,4 +8,5 @@ public interface IFilterPlaceRepository : IGenericRepository<FilterPlace>
 {
     // Đổi tên hàm cho khớp với class thực thi
     Task<IEnumerable<FilterPlace>> GetByUserId(Guid userId);
+
 }
