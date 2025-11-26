@@ -28,4 +28,24 @@ public class GymController : BaseApiController
             await Mediator.Send(new SearchGymsAdvancedQuery(originAddress, keyword, sortBy))
         ));
     }
+
+    [HttpPost("filters")]
+    public async Task<IActionResult> AddUserFilter([FromBody] AddUserFilterRequest request)
+    {
+        await Mediator.Send(new Application.Features.GymFeatures.Commands.AddUserFilterCommand(
+            request.UserId,
+            request.Name,
+            request.Address
+        ));
+        
+        return Ok(new Api.Wrappers.Response<string>("Filter added successfully"));
+    }
+
+    [HttpDelete("filters/{userId:guid}")]
+    public async Task<IActionResult> DeleteUserFilter([FromRoute] Guid userId)
+    {
+        await Mediator.Send(new Application.Features.GymFeatures.Commands.DeleteUserFilterCommand(userId));
+        
+        return Ok(new Api.Wrappers.Response<string>("Filter deleted successfully"));
+    }
 }
