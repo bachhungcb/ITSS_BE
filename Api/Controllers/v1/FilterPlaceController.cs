@@ -28,5 +28,4 @@ public class FilterPlaceController : BaseApiController
         return Ok(await Mediator.Send(new GetUserFilterPlacesQuery(userId)));
     }
     
-    
 }
