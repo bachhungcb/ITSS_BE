@@ -1,4 +1,5 @@
-﻿using Application.Features.FilterPlaceFeatures.Commands;
+﻿using System.Runtime.CompilerServices;
+using Application.Features.FilterPlaceFeatures.Commands;
 using Application.Features.FilterPlaceFeatures.Queries;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ public class FilterPlaceController : BaseApiController
         try
         {
             var entityId = await Mediator.Send(command);
-        return Ok(new { FilerPlaceId = entityId });
+            return Ok(new { FilerPlaceId = entityId });
         }
         catch (Exception ex)
         {
@@ -27,5 +28,17 @@ public class FilterPlaceController : BaseApiController
     {
         return Ok(await Mediator.Send(new GetUserFilterPlacesQuery(userId)));
     }
-    
+
+    [HttpDelete]
+    public async Task<IActionResult> Delete([FromQuery] Guid filterPlaceId)
+    {
+        try
+        {
+            return Ok(await Mediator.Send(new DeleteFilterPlaceCommand { Id = filterPlaceId }));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
