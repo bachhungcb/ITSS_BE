@@ -1,15 +1,28 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Api.DTO.Gyms;
 using Domain.Entities;
 using Domain.Interfaces;
 using Tools.DTOs;
+
 
 namespace Tools.Services;
 
 public class OsmGymPlaceSearchService : IGymSearchService
 {
     private readonly HttpClient _httpClient;
+
+    private readonly Dictionary<string, string> _sportTranslation = new()
+    {
+        { "basketball", "バスケ" },
+        { "soccer", "サッカー" },
+        { "badminton", "バドミントン" },
+        { "tennis", "テニス" },
+        { "swimming", "水泳" },
+        { "fitness", "フィットネス" },
+        { "yoga", "ヨーガ" }
+    };
 
     public OsmGymPlaceSearchService(HttpClient httpClient)
     {
@@ -22,7 +35,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
         // Lưu ý: UrlEncode address
         var geoUrl =
             $"https://nominatim.openstreetmap.org/search?q={System.Net.WebUtility.UrlEncode(address)}&format=json&limit=1";
-        _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Language", "ja"); 
+        _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Language", "ja");
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ITSS_App/1.0"); // Bắt buộc
 
         var geoResponse = await _httpClient.GetFromJsonAsync<JsonArray>(geoUrl);
@@ -68,56 +81,63 @@ public class OsmGymPlaceSearchService : IGymSearchService
             }
 
             // 2. MAP DTO -> DOMAIN ENTITY
-            var gyms = new List<GymPlace>();
+            var resultList = new List<GymPlace>();
 
             foreach (var element in overpassData.Elements)
             {
-                // Bỏ qua nếu không có tags (không có tên hoặc thông tin)
                 if (element.Tags == null) continue;
 
-                // Xử lý tọa độ: Nếu là Node lấy Lat/Lon, nếu là Way lấy Center.Lat/Center.Lon
-                double? latitude = element.Lat ?? element.Center?.Lat;
-                double? longitude = element.Lon ?? element.Center?.Lon;
+                // 1. Xử lý Tên (Ưu tiên tiếng Nhật như bài trước, hoặc tiếng Việt tùy bạn)
+                string name = "Phòng tập không tên";
+                if (element.Tags.TryGetValue("name:vi", out var viName)) name = viName;
+                else if (element.Tags.TryGetValue("name", out var originName)) name = originName;
 
-                // Nếu không lấy được tọa độ thì bỏ qua
-                if (!latitude.HasValue || !longitude.HasValue) continue;
-                
-                double distance = 0;
-                if (latitude.HasValue && longitude.HasValue)
+                // 2. Xử lý Môn thể thao (Tags "sport" trong OSM)
+                var sportTags = new List<string>();
+                if (element.Tags.TryGetValue("sport", out var sportRaw))
                 {
-                    distance = CalculateDistance(originLat, originLon, latitude.Value, longitude.Value);
-                }
-                // Lấy tên, nếu không có tên thì lấy tạm loại hình
-                string name;
-                if (element.Tags.ContainsKey("name:ja")) // Kiểm tra xem có tên tiếng Nhật không
-                {
-                    name = element.Tags["name:ja"];
-                }
-                else if (element.Tags.ContainsKey("name")) // Nếu không thì lấy tên gốc
-                {
-                    name = element.Tags["name"];
-                }
-                else
-                {
-                    name = "Unknown Gym";
+                    // OSM trả về dạng "basketball;badminton"
+                    var sports = sportRaw.Split(';');
+                    foreach (var s in sports)
+                    {
+                        // Dịch sang tiếng Việt nếu có trong từ điển, không thì lấy nguyên gốc
+                        var translated = _sportTranslation.TryGetValue(s, out var vn) ? vn : s;
+                        sportTags.Add(translated);
+                    }
                 }
 
-                // Lấy địa chỉ nếu có (OSM dùng các tag addr:housenumber, addr:street...)
-                string addressDetail = GetAddressFromTags(element.Tags);
+                // Nếu không có tag sport thì check tag leisure
+                if (sportTags.Count == 0 && element.Tags.TryGetValue("leisure", out var leisure))
+                {
+                    if (leisure == "fitness_centre") sportTags.Add("Thể hình");
+                }
 
-                gyms.Add(new GymPlace
+                // 3. Xử lý Ảnh (OSM không lưu ảnh, ta phải tự random hoặc check tag 'image')
+                string imgUrl = "https://example.com/default-gym.jpg";
+                if (sportTags.Contains("Bơi lội")) imgUrl = "https://example.com/pool.jpg";
+                else if (sportTags.Contains("Bóng rổ")) imgUrl = "https://example.com/basketball.jpg";
+
+                // 4. Xử lý Tọa độ & Địa chỉ
+                double lat = element.Lat ?? element.Center?.Lat ?? 0;
+                double lon = element.Lon ?? element.Center?.Lon ?? 0;
+                string addr = GetAddressFromTags(element.Tags); // Hàm cũ của bạn
+                resultList.Add(new GymPlace
                 {
                     Id = Guid.NewGuid(),
+                    // Lưu lại OsmId gốc để tham chiếu nếu cần
+                    OsmId = $"{element.Type}/{element.Id}", 
                     Name = name,
-                    Address = addressDetail,
-                    Latitude = latitude.Value,
-                    Longitude = longitude.Value,
-                    OsmId = $"{element.Type}/{element.Id}", // Lưu lại để debug: node/12345
-                    DistanceInMeters = distance,
+                    Address = GetAddressFromTags(element.Tags),
+                    Latitude = element.Lat ?? element.Center?.Lat ?? 0,
+                    Longitude = element.Lon ?? element.Center?.Lon ?? 0,
+            
+                    // Điền dữ liệu mới vào các trường vừa thêm
+                    Sports = sportTags,
+                    ImageUrl = imgUrl
                 });
             }
 
-            return gyms;
+            return resultList;
         }
         catch (Exception ex)
         {
@@ -127,7 +147,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
         }
     }
 
-    
+
     private string GetAddressFromTags(Dictionary<string, string> tags)
     {
         var parts = new List<string>();
@@ -150,7 +170,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
 
         return parts.Count > 0 ? string.Join(", ", parts) : "住所情報なし";
     }
-    
+
     // 1. Thêm hàm tiện ích tính khoảng cách
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {

@@ -29,4 +29,8 @@
     <ProjectReference Include="..\Tools\Tools.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTO\Gyms\" />
+  </ItemGroup>
+
 </Project>
