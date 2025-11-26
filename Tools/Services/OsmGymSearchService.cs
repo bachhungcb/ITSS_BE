@@ -124,9 +124,9 @@ public class OsmGymPlaceSearchService : IGymSearchService
                 }
 
                 // 3. Xử lý Ảnh (OSM không lưu ảnh, ta phải tự random hoặc check tag 'image')
-                string imgUrl = "https://example.com/default-gym.jpg";
-                if (sportTags.Contains("Bơi lội")) imgUrl = "https://example.com/pool.jpg";
-                else if (sportTags.Contains("Bóng rổ")) imgUrl = "https://example.com/basketball.jpg";
+                string imgUrl = "https://www.pexels.com/photo/a-gym-interior-8933584/";
+                if (sportTags.Contains("Bơi lội")) imgUrl = "https://www.pexels.com/photo/person-swimming-on-body-of-water-1415810/";
+                else if (sportTags.Contains("Bóng rổ")) imgUrl = "https://www.pexels.com/photo/man-dunking-the-ball-163452/";
 
                 // 4. Xử lý Tọa độ & Địa chỉ
                 double lat = element.Lat ?? element.Center?.Lat ?? 0;
