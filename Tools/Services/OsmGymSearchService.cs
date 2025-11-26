@@ -22,6 +22,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
         // Lưu ý: UrlEncode address
         var geoUrl =
             $"https://nominatim.openstreetmap.org/search?q={System.Net.WebUtility.UrlEncode(address)}&format=json&limit=1";
+        _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Language", "ja"); 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ITSS_App/1.0"); // Bắt buộc
 
         var geoResponse = await _httpClient.GetFromJsonAsync<JsonArray>(geoUrl);
@@ -87,9 +88,19 @@ public class OsmGymPlaceSearchService : IGymSearchService
                     distance = CalculateDistance(originLat, originLon, latitude.Value, longitude.Value);
                 }
                 // Lấy tên, nếu không có tên thì lấy tạm loại hình
-                string name = element.Tags.ContainsKey("name")
-                    ? element.Tags["name"]
-                    : "Unknown Gym";
+                string name;
+                if (element.Tags.ContainsKey("name:ja")) // Kiểm tra xem có tên tiếng Nhật không
+                {
+                    name = element.Tags["name:ja"];
+                }
+                else if (element.Tags.ContainsKey("name")) // Nếu không thì lấy tên gốc
+                {
+                    name = element.Tags["name"];
+                }
+                else
+                {
+                    name = "Unknown Gym";
+                }
 
                 // Lấy địa chỉ nếu có (OSM dùng các tag addr:housenumber, addr:street...)
                 string addressDetail = GetAddressFromTags(element.Tags);
@@ -120,11 +131,24 @@ public class OsmGymPlaceSearchService : IGymSearchService
     private string GetAddressFromTags(Dictionary<string, string> tags)
     {
         var parts = new List<string>();
-        if (tags.TryGetValue("addr:housenumber", out var num)) parts.Add(num);
-        if (tags.TryGetValue("addr:street", out var street)) parts.Add(street);
-        if (tags.TryGetValue("addr:city", out var city)) parts.Add(city);
 
-        return parts.Count > 0 ? string.Join(", ", parts) : "No address info";
+        // Helper function nhỏ để lấy value ưu tiên tiếng Nhật
+        string GetTagValue(string key)
+        {
+            if (tags.TryGetValue($"{key}:ja", out var valJa)) return valJa;
+            if (tags.TryGetValue(key, out var val)) return val;
+            return null;
+        }
+
+        var num = GetTagValue("addr:housenumber");
+        var street = GetTagValue("addr:street");
+        var city = GetTagValue("addr:city");
+
+        if (num != null) parts.Add(num);
+        if (street != null) parts.Add(street);
+        if (city != null) parts.Add(city);
+
+        return parts.Count > 0 ? string.Join(", ", parts) : "住所情報なし";
     }
     
     // 1. Thêm hàm tiện ích tính khoảng cách
