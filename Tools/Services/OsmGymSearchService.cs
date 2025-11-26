@@ -21,7 +21,18 @@ public class OsmGymPlaceSearchService : IGymSearchService
         { "tennis", "テニス" },
         { "swimming", "水泳" },
         { "fitness", "フィットネス" },
-        { "yoga", "ヨーガ" }
+        { "yoga", "ヨーガ" },
+        {"multi", "マルチ"},
+        {"pool", "プール"},
+        {"gim", "ギム"},
+        {"dry","ドライ"},
+        {"dance","ダンス"},
+        {"dancing", "ダンシング"},
+        {"exercise", "エクササイズ"},
+        {"workout", "運動"},
+        {"bicycle", "自転車"},
+        {"cycling", "サイクリング"},
+        {"kickboxing", "キックボクシング"}
     };
 
     public OsmGymPlaceSearchService(HttpClient httpClient)
@@ -130,7 +141,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
                     Address = GetAddressFromTags(element.Tags),
                     Latitude = element.Lat ?? element.Center?.Lat ?? 0,
                     Longitude = element.Lon ?? element.Center?.Lon ?? 0,
-            
+                    DistanceInMeters = CalculateDistance(originLat, originLon, lat, lon),
                     // Điền dữ liệu mới vào các trường vừa thêm
                     Sports = sportTags,
                     ImageUrl = imgUrl
