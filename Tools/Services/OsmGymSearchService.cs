@@ -22,17 +22,17 @@ public class OsmGymPlaceSearchService : IGymSearchService
         { "swimming", "水泳" },
         { "fitness", "フィットネス" },
         { "yoga", "ヨーガ" },
-        {"multi", "マルチ"},
-        {"pool", "プール"},
-        {"gim", "ギム"},
-        {"dry","ドライ"},
-        {"dance","ダンス"},
-        {"dancing", "ダンシング"},
-        {"exercise", "エクササイズ"},
-        {"workout", "運動"},
-        {"bicycle", "自転車"},
-        {"cycling", "サイクリング"},
-        {"kickboxing", "キックボクシング"}
+        { "multi", "マルチ" },
+        { "pool", "プール" },
+        { "gim", "ギム" },
+        { "dry", "ドライ" },
+        { "dance", "ダンス" },
+        { "dancing", "ダンシング" },
+        { "exercise", "エクササイズ" },
+        { "workout", "運動" },
+        { "bicycle", "自転車" },
+        { "cycling", "サイクリング" },
+        { "kickboxing", "キックボクシング" }
     };
 
     public OsmGymPlaceSearchService(HttpClient httpClient)
@@ -125,8 +125,10 @@ public class OsmGymPlaceSearchService : IGymSearchService
 
                 // 3. Xử lý Ảnh (OSM không lưu ảnh, ta phải tự random hoặc check tag 'image')
                 string imgUrl = "https://images.pexels.com/photos/8933584/pexels-photo-8933584.jpeg";
-                if (sportTags.Contains("Bơi lội")) imgUrl = "https://images.pexels.com/photos/1415810/pexels-photo-1415810.jpeg";
-                else if (sportTags.Contains("Bóng rổ")) imgUrl = "https://images.pexels.com/photos/945471/pexels-photo-945471.jpeg";
+                if (sportTags.Contains("Bơi lội"))
+                    imgUrl = "https://images.pexels.com/photos/1415810/pexels-photo-1415810.jpeg";
+                else if (sportTags.Contains("Bóng rổ"))
+                    imgUrl = "https://images.pexels.com/photos/945471/pexels-photo-945471.jpeg";
 
                 // 4. Xử lý Tọa độ & Địa chỉ
                 double lat = element.Lat ?? element.Center?.Lat ?? 0;
@@ -136,7 +138,7 @@ public class OsmGymPlaceSearchService : IGymSearchService
                 {
                     Id = Guid.NewGuid(),
                     // Lưu lại OsmId gốc để tham chiếu nếu cần
-                    OsmId = $"{element.Type}/{element.Id}", 
+                    OsmId = $"{element.Type}/{element.Id}",
                     Name = name,
                     Address = GetAddressFromTags(element.Tags),
                     Latitude = element.Lat ?? element.Center?.Lat ?? 0,
@@ -197,5 +199,142 @@ public class OsmGymPlaceSearchService : IGymSearchService
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 
         return R * c; // Trả về mét
+    }
+
+    // 1. Thêm hàm implement mới
+    public async Task<GymPlace?> GetGymPlaceByOsmIdAsync(string osmId)
+    {
+        // osmId format mong đợi: "node/12345" hoặc "way/67890"
+        var parts = osmId.Split('/');
+        if (parts.Length != 2) return null;
+
+        string type = parts[0]; // node hoặc way
+        string id = parts[1];
+
+        // Query lấy đúng 1 phần tử theo ID
+        string overpassQuery = $"""
+                                [out:json][timeout:25];
+                                {type}({id});
+                                out center; 
+                                """;
+
+        var overpassUrl = "https://overpass-api.de/api/interpreter";
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("data", overpassQuery)
+        });
+
+        try
+        {
+            var response = await _httpClient.PostAsync(overpassUrl, content);
+            response.EnsureSuccessStatusCode();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var overpassData = JsonSerializer.Deserialize<OverpassResponse>(jsonString, options);
+
+            if (overpassData?.Elements == null || !overpassData.Elements.Any())
+            {
+                return null;
+            }
+
+            // Lấy phần tử đầu tiên
+            var element = overpassData.Elements.First();
+
+            // Gọi hàm map dữ liệu (xem phần dưới)
+            // Lưu ý: Detail thì DistanceInMeters = 0 hoặc null vì không có điểm gốc so sánh
+            return MapToGymPlace(element, 0, 0);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error getting gym detail: {ex.Message}");
+            return null;
+        }
+    }
+
+    // 2. Refactor logic Map (Trích xuất từ hàm SearchGymsAroundAddressAsync cũ)
+    private GymPlace MapToGymPlace(Tools.DTOs.OverpassElement element, double originLat, double originLon)
+    {
+        if (element.Tags == null) return new GymPlace(); // Hoặc xử lý null tùy ý
+
+// 1. Xử lý Tên (Ưu tiên tiếng Nhật nếu muốn giống ảnh)
+        string name = "Unknown Place";
+        var lat = element.Lat ?? element.Center?.Lat ?? 0;
+        var lon = element.Lon ?? element.Center?.Lon ?? 0;
+        // Thử lấy tên tiếng Nhật trước
+        if (element.Tags.TryGetValue("name:ja", out var jaName)) name = jaName;
+        else if (element.Tags.TryGetValue("name:vi", out var viName)) name = viName;
+        else if (element.Tags.TryGetValue("name", out var defName)) name = defName;
+
+        // 2. Xử lý Mô tả (Description) - Quan trọng để giống ảnh
+        string? description = null;
+        if (element.Tags.TryGetValue("description:ja", out var descJa)) description = descJa; // Lấy mô tả tiếng Nhật
+        else if (element.Tags.TryGetValue("description", out var desc)) description = desc; // Lấy mô tả chung
+
+        // Nếu không có mô tả, tạo description giả lập từ các tag khác để UI không bị trống
+        if (string.IsNullOrEmpty(description) && element.Tags.TryGetValue("sport", out var s))
+        {
+            // Dịch sang tiếng Việt nếu có trong từ điển, không thì lấy nguyên gốc
+            var translated = _sportTranslation.TryGetValue(s, out var vn) ? vn : s;
+        }
+
+        // 3. Xử lý Giờ mở cửa (Opening Hours)
+        string? openingHours = null;
+        if (element.Tags.TryGetValue("opening_hours", out var hours))
+        {
+            // OSM trả về dạng "Mo-Su 06:00-21:00", bạn có thể để nguyên hoặc format lại
+            openingHours = hours;
+        }
+
+        var sportTags = new List<string>();
+        if (element.Tags.TryGetValue("sport", out var sportRaw))
+        {
+            // OSM trả về dạng "basketball;badminton"
+            var sports = sportRaw.Split(';');
+            foreach (var si in sports)
+            {
+                // Dịch sang tiếng Việt nếu có trong từ điển, không thì lấy nguyên gốc
+                var translated = _sportTranslation.TryGetValue(si, out var vn) ? vn : si;
+                sportTags.Add(translated);
+            }
+            var sportsString = string.Join(", ", sportTags);
+    
+            description = $"{name} は {sportsString} にぴったりの場所です。";
+        }
+
+        // Nếu không có tag sport thì check tag leisure
+        if (sportTags.Count == 0 && element.Tags.TryGetValue("leisure", out var leisure))
+        {
+            if (leisure == "fitness_centre") sportTags.Add("フィットネス");
+        }
+
+        // 3. Xử lý Ảnh (OSM không lưu ảnh, ta phải tự random hoặc check tag 'image')
+        string imgUrl = "https://images.pexels.com/photos/8933584/pexels-photo-8933584.jpeg";
+        if (sportTags.Contains("Bơi lội"))
+            imgUrl = "https://images.pexels.com/photos/1415810/pexels-photo-1415810.jpeg";
+        else if (sportTags.Contains("Bóng rổ"))
+            imgUrl = "https://images.pexels.com/photos/945471/pexels-photo-945471.jpeg";
+
+        // 4. Map vào Object
+        var result = new GymPlace
+        {
+            Id = Guid.NewGuid(),
+            OsmId = $"{element.Type}/{element.Id}",
+            Name = name,
+            Address = GetAddressFromTags(element.Tags),
+            Latitude = element.Lat ?? element.Center?.Lat ?? 0,
+            Longitude = element.Lon ?? element.Center?.Lon ?? 0,
+
+            // Map các trường mới
+            Description = description,
+            OpeningHours = openingHours,
+
+            // Giữ nguyên các trường cũ
+            Sports = sportTags,
+            ImageUrl = imgUrl,
+            DistanceInMeters = CalculateDistance(originLat, originLon, lat, lon)
+        };
+
+        return result;
     }
 }

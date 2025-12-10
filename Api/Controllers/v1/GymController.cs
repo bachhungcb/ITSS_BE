@@ -28,4 +28,27 @@ public class GymController : BaseApiController
             await Mediator.Send(new SearchGymsAdvancedQuery(originAddress, keyword, sortBy))
         ));
     }
+    
+    [HttpGet("{osmId}")] // Ví dụ: api/v1/gym/node%2F123456 (cần url encode dấu /)
+    public async Task<IActionResult> GetDetail([FromRoute] string osmId)
+    {
+        // Vì dấu "/" trong URL (node/123) có thể gây lỗi routing, 
+        // bạn nên decode nó nếu client gửi dạng url-encoded, 
+        // hoặc client gửi query param ?osmId=node/123 thì an toàn hơn.
+        // Ở đây giả sử client gửi đúng format đã encode hoặc binding đúng.
+        
+        // Cách an toàn hơn là dùng Query Param nếu bạn không muốn config web server cho phép special characters trong path
+        // Nhưng nếu dùng Route param, hãy đảm bảo client gọi api/v1/gym/node%2F12345
+        
+        try 
+        {
+            var osmIdDecoded = System.Net.WebUtility.UrlDecode(osmId);
+            var result = await Mediator.Send(new GetGymDetailByIdQuery(osmIdDecoded));
+            return Ok(new Api.Wrappers.Response<Domain.Entities.GymPlace>(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }
