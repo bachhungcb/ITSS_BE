@@ -1,13 +1,18 @@
-﻿namespace Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Domain.Entities;
 
 public class User : BaseEntity
 {
     public required string FullName { get; set; }
     public required string UserName { get; set; } //Display name
     public required string PasswordHash { get; set; }
+    [EmailAddress]
     public string Email { get; set; } //Unique
+    [Url]
     public string AvatarUrl { get; set; }
     public string Bio { get; set; }
+    [Phone]
     public string Phone { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -26,5 +31,8 @@ public class User : BaseEntity
     //For password reset
     public string? PasswordResetToken { get; set; }
     public DateTime? ResetTokenExpires { get; set; }
+    
+    public string? WorkAddress { get; set; }
+    public string? HomeAddress { get; set; }
     
 }

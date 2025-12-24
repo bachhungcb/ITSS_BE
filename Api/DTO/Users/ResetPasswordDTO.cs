@@ -4,7 +4,6 @@ namespace Api.DTO.Users;
 
 public class ResetPasswordDto
 {
-    [Required]
     public string Token { get; set; }
     
     [Required]
