@@ -3,9 +3,11 @@ using Application;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using DataAccess.EFCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Tools;
-
+using Api.Options;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -20,20 +22,25 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    // Lấy thông tin về các phiên bản API đã được định nghĩa
-    var apiVersionDescriptionProvider =
-        builder.Services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
-
-    // Vòng lặp để tạo một Swagger Document cho mỗi phiên bản API
-    foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
-    {
-        options.SwaggerDoc(description.GroupName, new OpenApiInfo
-        {
-            Title = $"API của tôi phiên bản {description.ApiVersion}",
-            Version = description.ApiVersion.ToString()
-        });
-    }
+    options.EnableAnnotations();
 });
+
+// 2. CẤU HÌNH CHI TIẾT (Giải pháp sửa lỗi)
+// Sử dụng AddOptions để inject IApiVersionDescriptionProvider một cách an toàn
+builder.Services.AddOptions<SwaggerGenOptions>()
+    .Configure<IApiVersionDescriptionProvider>((options, provider) =>
+    {
+        // Duyệt qua các version đã tìm thấy để tạo SwaggerDoc
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerDoc(description.GroupName, new OpenApiInfo
+            {
+                Title = $"ITSS Backend API {description.ApiVersion}",
+                Version = description.ApiVersion.ToString(), // <-- Đây là trường bắt buộc để fix lỗi
+                Description = description.IsDeprecated ? "API này đã cũ." : "Tài liệu API hệ thống."
+            });
+        }
+    });
 
 #endregion
 

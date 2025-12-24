@@ -1,4 +1,6 @@
-﻿using Application.Interfaces;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,13 +9,20 @@ namespace Application.Features.UserFeatures.Commands;
 public class UpdateUserCommand : IRequest<Guid>
 {
     public Guid Id { get; set; }
+    [DisplayName("User Name")]
     public string UserName { get; set; }
+    [DisplayName("Full Name")]
     public string FullName { get; set; }
+    [EmailAddress]
     public string Email { get; set; }
+    [Url]
     public string AvatarUrl { get; set; }
+    [Description]
     public string Bio { get; set; }
+    [Phone]
     public string Phone { get; set; }
-
+    public string WorkAddress { get; set; }
+    public string HomeAddress { get; set; }
     
     public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Guid>
     {
@@ -40,6 +49,8 @@ public class UpdateUserCommand : IRequest<Guid>
                 user.AvatarUrl = request.AvatarUrl;
                 user.Bio = request.Bio;
                 user.Phone = request.Phone;
+                user.WorkAddress = request.WorkAddress;
+                user.HomeAddress = request.HomeAddress;
                 user.UpdatedAt = updatedAt;
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return user.Id;
