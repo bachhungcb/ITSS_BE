@@ -18,57 +18,6 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
-#region Swagger
-
-builder.Services.AddSwaggerGen(options =>
-{
-    options.EnableAnnotations();
-});
-
-// 2. CẤU HÌNH CHI TIẾT (Giải pháp sửa lỗi)
-// Sử dụng AddOptions để inject IApiVersionDescriptionProvider một cách an toàn
-builder.Services.AddOptions<SwaggerGenOptions>()
-    .Configure<IApiVersionDescriptionProvider>((options, provider) =>
-    {
-        // Duyệt qua các version đã tìm thấy để tạo SwaggerDoc
-        foreach (var description in provider.ApiVersionDescriptions)
-        {
-            options.SwaggerDoc(description.GroupName, new OpenApiInfo
-            {
-                Title = $"ITSS Backend API {description.ApiVersion}",
-                Version = description.ApiVersion.ToString(), // <-- Đây là trường bắt buộc để fix lỗi
-                Description = description.IsDeprecated ? "API này đã cũ." : "Tài liệu API hệ thống."
-            });
-        }
-    });
-
-#endregion
-
-#region CORS
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-        policy => {
-            policy.AllowAnyOrigin() 
-                .AllowAnyMethod() 
-                .AllowAnyHeader(); 
-        }
-    );
-});
-
-
-#endregion
-
-#region Services
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUriService, UriService>();
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddTools();
-#endregion
-
 #region API Versioning
 
 // 1. Cấu hình API Versioning với tên mới
@@ -81,6 +30,7 @@ builder.Services.AddApiVersioning(options =>
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
     })
 // 2. PHẦN QUAN TRỌNG NHẤT: Dùng AddApiExplorer thay vì AddVersionedApiExplorer
+    .AddMvc()
     .AddApiExplorer(options =>
     {
         // Định dạng tên version trong Swagger UI: v1, v2, ...
@@ -91,6 +41,57 @@ builder.Services.AddApiVersioning(options =>
     });
 
 #endregion
+
+#region Swagger
+
+builder.Services.AddSwaggerGen(options => { options.EnableAnnotations(); });
+
+// 2. CẤU HÌNH CHI TIẾT (Giải pháp sửa lỗi)
+// Sử dụng AddOptions để inject IApiVersionDescriptionProvider một cách an toàn
+builder.Services.AddOptions<SwaggerGenOptions>()
+    .Configure<IApiVersionDescriptionProvider>((options, provider) =>
+    {
+        // Debug: Nếu provider.ApiVersionDescriptions rỗng, Swagger sẽ lỗi.
+        // Bước 1 ở trên sẽ đảm bảo danh sách này có dữ liệu.
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerDoc(description.GroupName, new OpenApiInfo
+            {
+                Title = $"ITSS Backend API {description.ApiVersion}",
+                Version = description.ApiVersion.ToString(),
+                Description = description.IsDeprecated ? "API cũ" : "API hệ thống"
+            });
+        }
+    });
+
+#endregion
+
+#region CORS
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }
+    );
+});
+
+#endregion
+
+#region Services
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUriService, UriService>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddTools();
+
+#endregion
+
 
 var app = builder.Build();
 
