@@ -31,6 +31,11 @@ public class TokenService : IToken
         return Convert.ToHexString(randomNumber);
     }
     
+    public string GenerateOtp()
+    {
+        
+        return Random.Shared.Next(100000, 999999).ToString();
+    }
     public string HashToken(string token)
     {
         //Using SHA256 alg for hashing

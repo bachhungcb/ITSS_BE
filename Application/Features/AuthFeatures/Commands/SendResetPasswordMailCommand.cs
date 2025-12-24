@@ -19,7 +19,7 @@ public class SendResetPasswordMailCommand : IRequest<bool>
         private readonly IMediator _mediator;
         private readonly IConfiguration _configuration;
         private readonly IToken _token;
-
+        
         public ForgotPasswordCommandHandler(
             IUnitOfWork unitOfWork,
             IEmailService emailService,
@@ -46,9 +46,10 @@ public class SendResetPasswordMailCommand : IRequest<bool>
 
             // 1. Create a raw token
             string rawToken = _token.GenerateSafeRandomToken();
+            string otp = _token.GenerateOtp();
 
             // 2. Hash raw token
-            string hashedToken = _token.HashToken(rawToken);
+            string hashedToken = _token.HashToken(otp);
 
             // 3. Save hased token to DB            
             user.PasswordResetToken = hashedToken;
@@ -61,13 +62,11 @@ public class SendResetPasswordMailCommand : IRequest<bool>
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             
             //TODO: Implement resetLink based on FE URL
-            var baseURL = _configuration.GetSection("BaseURL").Value;
-            var resetLink = $"{baseURL}/reset-password?token={rawToken}";
             
             await _emailSevice.SendEmailAsync(
                 user.Email,
                 "Reset Password request",
-                $"Please go to this link and reset your password: {resetLink}");
+                $"Please go use this otp and reset your password: {otp}");
             return true;
         }
         
