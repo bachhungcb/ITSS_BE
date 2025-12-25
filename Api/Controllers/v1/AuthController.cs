@@ -103,4 +103,20 @@ public class AuthController : BaseApiController
             return BadRequest(new{message = ex.Message});
         }
     }
+
+    [HttpPost("validate-token")]
+    public async Task<IActionResult> ValidateToken([FromBody] ValidateTokenCommand command)
+    {
+        try
+        {
+            var result = await _mediator.Send(command);
+            return Ok(new
+            {
+                Result = result
+            });
+        }catch (Exception ex)
+        {
+            return BadRequest(new{message = ex.Message});
+        }
+    }
 }
