@@ -12,7 +12,6 @@ public class User : BaseEntity
     [Url]
     public string AvatarUrl { get; set; }
     public string Bio { get; set; }
-    [Phone]
     public string Phone { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

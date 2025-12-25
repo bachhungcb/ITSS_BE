@@ -71,7 +71,9 @@ public class UserController : BaseApiController
             Email = dto.Email,
             AvatarUrl = dto.AvatarUrl,
             Bio = dto.Bio,
-            Phone = dto.Phone
+            Phone = dto.Phone,
+            HomeAddress = dto.HomeAddress,
+            WorkAddress = dto.WorkAddress,
         };
         return Ok(await _mediator.Send(command));
     }
