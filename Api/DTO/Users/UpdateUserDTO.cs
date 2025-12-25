@@ -10,7 +10,6 @@ public class UpdateUserDto
     public string FullName { get; set; }
     [EmailAddress]
     public string Email { get; set; }
-    [Url]
     public string AvatarUrl { get; set; }
     public string Bio { get; set; }
     public string Phone { get; set; }
