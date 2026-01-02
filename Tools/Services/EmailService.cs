@@ -40,7 +40,9 @@ public class EmailService : IEmailService
 
         if (!response.IsSuccessStatusCode)
         {
-            //TODO: Log error for further investigation
+            var errorBody = await response.Body.ReadAsStringAsync();
+            // Ném lỗi ra để Controller bắt được và trả về BadRequest
+            throw new Exception($"SendGrid Error: {response.StatusCode} - {errorBody}");
         }
     }
 }
