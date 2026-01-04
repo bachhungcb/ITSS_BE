@@ -53,9 +53,17 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy
+                .WithOrigins("http://localhost:3000",
+                    "http://localhost:5173",
+                    "http://localhost:5126",
+                    "http://scic.navistar.io:42068",
+                    "https://scic.navistar.io",
+                    "https://scic.navistar.io/chathub",
+                    "https://bachhungcb.github.io") // Đổi thành URL Frontend của bạn (React/Vue/Angular)
                 .AllowAnyMethod()
-                .AllowAnyHeader();
+                .AllowAnyHeader()
+                .AllowCredentials(); // <--- BẮT BUỘC PHẢI CÓ CHO SIGNALR
         }
     );
 });
@@ -80,7 +88,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     // SỬA ĐOẠN NÀY: Thêm options để ép phiên bản
-    app.UseSwagger(); 
+    app.UseSwagger();
 
     app.UseSwaggerUI(options =>
     {
