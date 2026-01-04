@@ -54,16 +54,16 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy
-                .WithOrigins("http://localhost:3000",
-                    "http://localhost:5173",
-                    "http://localhost:5126",
-                    "http://scic.navistar.io:42068",
-                    "https://scic.navistar.io",
-                    "https://scic.navistar.io/chathub",
-                    "https://bachhungcb.github.io") // Đổi thành URL Frontend của bạn (React/Vue/Angular)
+                // Thay vì .WithOrigins("...") hãy dùng SetIsOriginAllowed
+                .SetIsOriginAllowed(origin => true) // CHẤP NHẬN MỌI ORIGIN (Chỉ dùng khi dev hoặc nếu bạn muốn mở public hoàn toàn)
+                // Hoặc nếu muốn bảo mật hơn nhưng vẫn fix lỗi, hãy dùng logic kiểm tra:
+                // .SetIsOriginAllowed(origin => 
+                //     origin == "https://bachhungcb.github.io" || 
+                //     origin.StartsWith("http://localhost")) 
+                
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials(); // <--- BẮT BUỘC PHẢI CÓ CHO SIGNALR
+                .AllowCredentials(); // Bắt buộc phải có nếu dùng SignalR hoặc Cookies/Auth headers
         }
     );
 });
