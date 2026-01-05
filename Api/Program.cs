@@ -53,17 +53,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy =>
         {
-            policy
-                // Thay vì .WithOrigins("...") hãy dùng SetIsOriginAllowed
-                .SetIsOriginAllowed(origin => true) // CHẤP NHẬN MỌI ORIGIN (Chỉ dùng khi dev hoặc nếu bạn muốn mở public hoàn toàn)
-                // Hoặc nếu muốn bảo mật hơn nhưng vẫn fix lỗi, hãy dùng logic kiểm tra:
-                // .SetIsOriginAllowed(origin => 
-                //     origin == "https://bachhungcb.github.io" || 
-                //     origin.StartsWith("http://localhost")) 
-                
+            policy.WithOrigins("https://bachhungcb.github.io") // Chỉ định chính xác domain FE
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials(); // Bắt buộc phải có nếu dùng SignalR hoặc Cookies/Auth headers
+                .AllowCredentials();
         }
     );
 });
