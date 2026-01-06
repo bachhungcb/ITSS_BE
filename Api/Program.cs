@@ -55,8 +55,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins("https://bachhungcb.github.io",
                                 "http://scic.navistar.io:3636",
-                                "https://scic.navistar.io:3636") // Chỉ định chính xác domain FE
-            "https://bachhungcb.github.io",
+                                "https://scic.navistar.io:3636", // Chỉ định chính xác domain FE
+                                "https://bachhungcb.github.io",
                                 "http://localhost:5173") // Chỉ định chính xác domain FE
                 .AllowAnyMethod()
                 .AllowAnyHeader()
