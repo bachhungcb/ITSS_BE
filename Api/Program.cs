@@ -53,7 +53,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy =>
         {
-            policy.WithOrigins("https://bachhungcb.github.io") // Chỉ định chính xác domain FE
+            policy.WithOrigins("https://bachhungcb.github.io",
+                                "http://localhost:5173") // Chỉ định chính xác domain FE
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
